@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/md5"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/jinzhu/copier"
 	"github.com/xinliangnote/go-util/mail"
@@ -57,7 +58,7 @@ type Sign struct {
 
 func main() {
 	iqiyiCookie := os.Getenv("iqiyiCookie")
-	jhCookie := os.Getenv("jhCookie")
+	//jhCookie := os.Getenv("jhCookie")
 
 	for {
 		errorString := ""
@@ -68,14 +69,14 @@ func main() {
 			fmt.Println("爱奇艺签到成功," + result)
 		}
 
-		res, err := jhSign(jhCookie)
-		if err != nil {
-			errorString += "\r\n;腾讯聚惠签到失败：" + err.Error()
-		} else {
-			fmt.Println("腾讯聚惠签到成功：" + res)
-		}
+		//res, err := jhSign(jhCookie)
+		//if err != nil {
+		//	errorString += "\r\n;腾讯聚惠签到失败：" + err.Error()
+		//} else {
+		//	fmt.Println("腾讯聚惠签到成功：" + res)
+		//}
 		if errorString != "" {
-			sendMail(errorString)
+			//sendMail(errorString)
 		}
 		time.Sleep(time.Hour * 24)
 	}
@@ -83,32 +84,32 @@ func main() {
 
 }
 
-func jhSign(cookie string) (string, error) {
-	ckArr := strings.Split(cookie, "=")
-	ck := HttpCookie{
-		Name:   ckArr[0],
-		Value:  ckArr[1],
-		Path:   "/",
-		Domain: jhSignDomain,
-	}
-	body, _ := Request(jhSignUrl, emptyParam, emptyParam, ck, POST, "json")
-	req := struct {
-		Code int `json:"code"`
-		Message string `json:"message"`
-	}{}
-	json.Unmarshal(body, &req)
-	if req.Code != 0 {
-		return string(body), fmt.Errorf(req.Message)
-	}
-	return string(body), nil
-}
+//func jhSign(cookie string) (string, error) {
+//	ckArr := strings.Split(cookie, "=")
+//	ck := HttpCookie{
+//		Name:   ckArr[0],
+//		Value:  ckArr[1],
+//		Path:   "/",
+//		Domain: jhSignDomain,
+//	}
+//	body, _ := Request(jhSignUrl, emptyParam, emptyParam, ck, POST, "json")
+//	req := struct {
+//		Code int `json:"code"`
+//		Message string `json:"message"`
+//	}{}
+//	json.Unmarshal(body, &req)
+//	if req.Code != 0 {
+//		return string(body), errors.New(req.Message)
+//	}
+//	return string(body), nil
+//}
 
 func iqiyiSign(cookie string) (string, error) {
 	P00001 := findStr("P00001=(.*?);", cookie, ";")
 	userId := findStr("P00003=(.*?);", cookie, ";")
 	dfp := findStr("__dfp=(.*?)@", cookie, "@")
 	if P00001 == "" || userId == "" || dfp == "" {
-		return "", fmt.Errorf("cookie解析失败")
+		return "", errors.New("cookie解析失败")
 	}
 	agent := "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/97.0.4692.71 Safari/537.36"
 	signData := Sign{
@@ -161,7 +162,7 @@ func iqiyiSign(cookie string) (string, error) {
 	}{}
 	json.Unmarshal(body, &req)
 	if req.Code != "A00000" {
-		return string(body), fmt.Errorf(req.Message)
+		return string(body), errors.New(req.Message)
 	}
 	return string(body), nil
 }
